@@ -1,2 +1,3 @@
-keys/*
+keys/app.rsa.pub
+keys/app.rsa
 jwt

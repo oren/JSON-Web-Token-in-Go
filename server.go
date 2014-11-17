@@ -53,7 +53,6 @@ const (
 
 // reads the form values, checks them and creates the token
 func authHandler(w http.ResponseWriter, r *http.Request) {
-
 	// make sure its post
 	if r.Method != "POST" {
 		w.WriteHeader(http.StatusBadRequest)
@@ -61,11 +60,9 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// user := r.FormValue("user")
-	// pass := r.FormValue("pass")
 	type Form struct {
-		user string `json:"user"`
-		pass string `json:"pass"`
+		User string `json:"user"`
+		Pass string `json:"pass"`
 	}
 
 	f := &Form{}
@@ -79,10 +76,10 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 
         log.Printf("f: %+v\n", f) // f: &{user: pass:}
 
-	log.Printf("Authenticate: user[%s] pass[%s]\n", f.user, f.pass)
+	log.Printf("Authenticate: user[%s] pass[%s]\n", f.User, f.Pass)
 
 	// check values
-	if f.user != "test" || f.pass != "known" {
+	if f.User != "test" || f.Pass != "known" {
 		w.WriteHeader(http.StatusForbidden)
 		fmt.Fprintln(w, "Wrong info")
 		return
@@ -96,7 +93,7 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 	t.Claims["CustomUserInfo"] = struct {
 		Name string
 		Kind string
-	}{f.user, "human"}
+	}{f.User, "human"}
 
 	// set the expire time
 	// see http://tools.ietf.org/html/draft-ietf-oauth-json-web-token-20#section-4.1.4
@@ -109,16 +106,6 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// i know using cookies to store the token isn't really helpfull for cross domain api usage
-	// but it's just an example and i did not want to involve javascript
-	// http.SetCookie(w, &http.Cookie{
-	// 	Name:       tokenName,
-	// 	Value:      tokenString,
-	// 	Path:       "/",
-	// 	RawExpires: "0",
-	// })
-
-	// w.Header().Set("Content-Type", "text/html")
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintln(w, tokenString)

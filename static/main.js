@@ -25,7 +25,13 @@ document.addEventListener('DOMContentLoaded', function() {
     var obj = serialize(form, { hash: true });
     callAuth(JSON.stringify(obj));
   }
+
+  window.onpopstate = function(){
+    console.log("new location: "+window.location);
+  }
+
 });
+
 
 function callAuth(formData) {
   xhr({
@@ -52,6 +58,7 @@ function renderRestricted(main, e) {
   e.preventDefault();
   e.stopPropagation();
   main.innerHTML = tmpl(restrictedTmpl)({});
+  window.history.pushState(undefined, undefined, '/restricted');
 
   var home = $('.home');
   home.addEventListener('click', renderHome.bind(undefined, main));
@@ -62,7 +69,9 @@ function renderHome(main, e) {
   e.preventDefault();
   e.stopPropagation();
   main.innerHTML = tmpl(homeTmpl)({});
+  window.history.pushState(undefined, undefined, '/');
 
   var restricted = $('.restricted');
   restricted.addEventListener('click', renderRestricted.bind(undefined, main));
 }
+

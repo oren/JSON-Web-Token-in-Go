@@ -16,13 +16,10 @@ document.addEventListener('DOMContentLoaded', function() {
     var form = $('form');
     var obj = serialize(form, { hash: true });
     callAuth(JSON.stringify(obj));
-    console.log('ajax call to /authenticate');
   }
 });
 
 function callAuth(formData) {
-  console.log('data', formData);
-
   xhr({
       uri: '/authenticate',
       method: 'POST',
@@ -31,11 +28,13 @@ function callAuth(formData) {
           'Content-Type': 'application/json'
       }
   }, function (err, resp, body) {
+    if (resp.statusCode === 200) {
+      window.sessionStorage.token = resp.body;
+      return;
+    }
+
+    delete window.sessionStorage.token;
     console.log('code', resp.statusCode);
     console.log('body', resp.body);
-    window.sessionStorage.token = resp.body;
   });
 }
-
-var form = document.querySelector('#example-form');
-

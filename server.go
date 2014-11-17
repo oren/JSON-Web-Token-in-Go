@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"time"
+        "encoding/json"
 
 	jwt "github.com/dgrijalva/jwt-go"
 )
@@ -45,7 +46,7 @@ func init() {
 
 // just some html, to lazy for http.FileServer()
 const (
-	tokenName = "AccessToken"
+	tokenName      = "AccessToken"
 	successHtml    = `<h2>Token Set - have fun!</h2><p>Go <a href="/">Back...</a></p>`
 	restrictedHtml = `<h1>Welcome!!</h1><img src="https://httpcats.herokuapp.com/200" alt="" />`
 )
@@ -59,13 +60,26 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user := r.FormValue("user")
-	pass := r.FormValue("pass")
+	// user := r.FormValue("user")
+	// pass := r.FormValue("pass")
+	type Form struct {
+		user string `json:"name"`
+		pass string `json:"email"`
+	}
 
-	log.Printf("Authenticate: user[%s] pass[%s]\n", user, pass)
+	f := &Form{}
+
+	if err := json.NewDecoder(r.Body).Decode(f); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintln(w, "Sorry, error while decoding JSON")
+		log.Printf("JSON decoding error: %v\n", err)
+		return
+	}
+
+	log.Printf("Authenticate: user[%s] pass[%s]\n", f.user, f.pass)
 
 	// check values
-	if user != "test" || pass != "known" {
+	if f.user != "test" || f.pass != "known" {
 		w.WriteHeader(http.StatusForbidden)
 		fmt.Fprintln(w, "Wrong info")
 		return
@@ -79,7 +93,7 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 	t.Claims["CustomUserInfo"] = struct {
 		Name string
 		Kind string
-	}{user, "human"}
+	}{f.user, "human"}
 
 	// set the expire time
 	// see http://tools.ietf.org/html/draft-ietf-oauth-json-web-token-20#section-4.1.4
@@ -94,16 +108,17 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 
 	// i know using cookies to store the token isn't really helpfull for cross domain api usage
 	// but it's just an example and i did not want to involve javascript
-	http.SetCookie(w, &http.Cookie{
-		Name:       tokenName,
-		Value:      tokenString,
-		Path:       "/",
-		RawExpires: "0",
-	})
+	// http.SetCookie(w, &http.Cookie{
+	// 	Name:       tokenName,
+	// 	Value:      tokenString,
+	// 	Path:       "/",
+	// 	RawExpires: "0",
+	// })
 
-	w.Header().Set("Content-Type", "text/html")
+	// w.Header().Set("Content-Type", "text/html")
+	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintln(w, successHtml)
+	fmt.Fprintln(w, tokenString)
 }
 
 // only accessible with a valid token
@@ -183,7 +198,7 @@ func main() {
 
 	http.HandleFunc("/authenticate", authHandler)
 	http.HandleFunc("/restricted", restrictedHandler)
-        http.Handle("/", http.FileServer(http.Dir("static")))
+	http.Handle("/", http.FileServer(http.Dir("static")))
 
 	http.ListenAndServe(":3000", nil)
 

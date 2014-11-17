@@ -1,5 +1,6 @@
 # JSON Web Token in Go
 
+
 Token-Based Authentication instead of Cookies
 
 * [Setup](#setup)

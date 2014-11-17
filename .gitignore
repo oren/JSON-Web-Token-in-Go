@@ -3,3 +3,4 @@ keys/app.rsa
 node_modules
 jwt
 static/bundle.js
+npm-debug.log

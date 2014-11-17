@@ -6,16 +6,17 @@
 </head>
 
 <body>
+  <h2>Welcome to the JWT Test</h2>
 
-<h2>Welcome to the JWT Test</h2>
+  <main>
+    <a href='/restricted' class='restricted'>fun area</a>
 
-<a href="/restricted">fun area</a>
-
-<form action="/authenticate" method="POST">
-  <input type="text" name="user">
-  <input type="password" name="pass">
-  <input type="submit">
-</form>
+    <form action="/authenticate" method="POST">
+      <input type="text" name="user">
+      <input type="password" name="pass">
+      <input type="submit">
+    </form>
+  </main>
 
   <script src='/bundle.js'></script>
 </body>

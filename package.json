@@ -1,0 +1,23 @@
+{
+  "name": "jwt",
+  "version": "1.0.0",
+  "description": "Token-Based Authentication instead of Cookies",
+  "main": "index.js",
+  "scripts": {
+    "watch": "watchify ./static/main.js -o ./static/bundle.js",
+    "build": "browserify ./static/main.js -o ./static/bundle.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/oren/JSON-Web-Token-in-Go.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/oren/JSON-Web-Token-in-Go/issues"
+  },
+  "homepage": "https://github.com/oren/JSON-Web-Token-in-Go",
+  "devDependencies": {
+    "watchify": "^2.1.1"
+  }
+}

@@ -53,6 +53,7 @@ const (
 
 // reads the form values, checks them and creates the token
 func authHandler(w http.ResponseWriter, r *http.Request) {
+
 	// make sure its post
 	if r.Method != "POST" {
 		w.WriteHeader(http.StatusBadRequest)
@@ -63,8 +64,8 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 	// user := r.FormValue("user")
 	// pass := r.FormValue("pass")
 	type Form struct {
-		user string `json:"name"`
-		pass string `json:"email"`
+		user string `json:"user"`
+		pass string `json:"pass"`
 	}
 
 	f := &Form{}
@@ -75,6 +76,8 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("JSON decoding error: %v\n", err)
 		return
 	}
+
+        log.Printf("f: %+v\n", f) // f: &{user: pass:}
 
 	log.Printf("Authenticate: user[%s] pass[%s]\n", f.user, f.pass)
 

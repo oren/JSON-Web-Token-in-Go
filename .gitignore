@@ -1,3 +1,4 @@
 keys/app.rsa.pub
 keys/app.rsa
+node_modules
 jwt

@@ -46,27 +46,9 @@ func init() {
 // just some html, to lazy for http.FileServer()
 const (
 	tokenName = "AccessToken"
-
-	landingHtml = `<h2>Welcome to the JWT Test</h2>
-
-<a href="/restricted">fun area</a>
-
-<form action="/authenticate" method="POST">
-        <input type="text" name="user">
-        <input type="password" name="pass">
-        <input type="submit">
-</form>`
-
 	successHtml    = `<h2>Token Set - have fun!</h2><p>Go <a href="/">Back...</a></p>`
 	restrictedHtml = `<h1>Welcome!!</h1><img src="https://httpcats.herokuapp.com/200" alt="" />`
 )
-
-// serves the form and restricted link
-func landingHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html")
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprint(w, landingHtml)
-}
 
 // reads the form values, checks them and creates the token
 func authHandler(w http.ResponseWriter, r *http.Request) {
@@ -199,10 +181,11 @@ func restrictedHandler(w http.ResponseWriter, r *http.Request) {
 // setup the handlers and start listening to requests
 func main() {
 
-	http.HandleFunc("/", landingHandler)
 	http.HandleFunc("/authenticate", authHandler)
 	http.HandleFunc("/restricted", restrictedHandler)
+        http.Handle("/", http.FileServer(http.Dir("static")))
+
+	http.ListenAndServe(":3000", nil)
 
 	log.Println("Listening...")
-	http.ListenAndServe(":3000", nil)
 }

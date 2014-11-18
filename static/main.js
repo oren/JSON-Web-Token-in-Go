@@ -9,29 +9,43 @@ var restrictedTmpl = fs.readFileSync('./static/templates/restricted.html', 'utf8
 var homeTmpl = fs.readFileSync('./static/templates/home.html', 'utf8');
 
 document.addEventListener('DOMContentLoaded', function() {
-  var main = $('main');
-
   var submit = $('form input[type=submit]');
   submit.addEventListener('click', auth);
 
   var restricted = $('.restricted');
-  restricted.addEventListener('click', renderRestricted.bind(undefined, main));
+  restricted.addEventListener('click', renderRestricted);
 
-  function auth (e) {
-    e.preventDefault();
-    e.stopPropagation();
-
-    var form = $('form');
-    var obj = serialize(form, { hash: true });
-    callAuth(JSON.stringify(obj));
-  }
-
-  window.onpopstate = function(){
-    console.log("new location: "+window.location);
-  }
-
+  // Store the initial content so we can revisit it later
+    history.replaceState({url: '/'}, '', '/');
 });
 
+function auth (e) {
+  e.preventDefault();
+  e.stopPropagation();
+
+  var form = $('form');
+  var obj = serialize(form, { hash: true });
+  callAuth(JSON.stringify(obj));
+}
+
+// back button
+window.onpopstate = function(e) {
+  console.log('onpopstate. pathname: ', e.state);
+  route(e.state.url);
+};
+
+function route(url) {
+  switch (url) {
+    case '/':
+      renderHome();
+      break;
+    case '/restricted':
+      renderRestricted();
+      break;
+    default:
+      renderHome();
+  }
+}
 
 function callAuth(formData) {
   xhr({
@@ -53,25 +67,43 @@ function callAuth(formData) {
   });
 }
 
-function renderRestricted(main, e) {
-  console.log('main', main);
-  e.preventDefault();
-  e.stopPropagation();
-  main.innerHTML = tmpl(restrictedTmpl)({});
-  window.history.pushState(undefined, undefined, '/restricted');
+function renderRestricted(e) {
+  if (e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
 
+  var current = '/';
+  var newUrl = '/restricted';
+  window.history.pushState({url: current}, '', newUrl);
+  console.log('pushed', current);
+  var main = $('main');
+  main.innerHTML = tmpl(restrictedTmpl)({});
+
+  // events
   var home = $('.home');
-  home.addEventListener('click', renderHome.bind(undefined, main));
+  home.addEventListener('click', renderHome);
+
 }
 
-function renderHome(main, e) {
-  console.log('main', main);
-  e.preventDefault();
-  e.stopPropagation();
+function renderHome(e) {
+  if (e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  var current = '/restricted';
+  var newUrl= '/';
+  window.history.pushState({url: current}, '', newUrl);
+  console.log('pushed', current);
+  var main = $('main');
   main.innerHTML = tmpl(homeTmpl)({});
-  window.history.pushState(undefined, undefined, '/');
+
+
+  // events
+  var submit = $('form input[type=submit]');
+  submit.addEventListener('click', auth);
 
   var restricted = $('.restricted');
-  restricted.addEventListener('click', renderRestricted.bind(undefined, main));
+  restricted.addEventListener('click', renderRestricted);
 }
-

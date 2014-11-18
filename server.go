@@ -3,12 +3,12 @@ package main
 // using asymmetric crypto/RSA keys
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
-        "encoding/json"
 
 	jwt "github.com/dgrijalva/jwt-go"
 )
@@ -74,7 +74,7 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-        log.Printf("f: %+v\n", f) // f: &{user: pass:}
+	log.Printf("f: %+v\n", f) // f: &{user: pass:}
 
 	log.Printf("Authenticate: user[%s] pass[%s]\n", f.User, f.Pass)
 
@@ -161,7 +161,7 @@ func restrictedHandler(w http.ResponseWriter, r *http.Request) {
 	case *jwt.ValidationError: // something was wrong during the validation
 		vErr := err.(*jwt.ValidationError)
 
-		switch vErr.Errors {
+                switch vErr.Errors {
 		case jwt.ValidationErrorExpired:
 			w.WriteHeader(http.StatusUnauthorized)
 			fmt.Fprintln(w, "Token Expired, get a new one.")
@@ -185,7 +185,6 @@ func restrictedHandler(w http.ResponseWriter, r *http.Request) {
 
 // setup the handlers and start listening to requests
 func main() {
-
 	http.HandleFunc("/authenticate", authHandler)
 	http.HandleFunc("/restricted", restrictedHandler)
 	http.Handle("/", http.FileServer(http.Dir("static")))

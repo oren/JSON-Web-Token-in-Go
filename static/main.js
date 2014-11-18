@@ -75,7 +75,6 @@ function renderRestricted(e) {
     var current = '/';
     var newUrl = '/restricted';
     window.history.pushState({url: current}, '', newUrl);
-    console.log('pushed', current);
   }
 
   var main = $('main');
@@ -95,7 +94,6 @@ function renderHome(e) {
     var current = '/restricted';
     var newUrl= '/';
     window.history.pushState({url: current}, '', newUrl);
-    console.log('pushed', current);
   }
 
   var main = $('main');

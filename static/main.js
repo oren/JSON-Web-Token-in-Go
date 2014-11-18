@@ -68,15 +68,16 @@ function callAuth(formData) {
 }
 
 function renderRestricted(e) {
+  // only when clicked. not back button
   if (e) {
     e.preventDefault();
     e.stopPropagation();
+    var current = '/';
+    var newUrl = '/restricted';
+    window.history.pushState({url: current}, '', newUrl);
+    console.log('pushed', current);
   }
 
-  var current = '/';
-  var newUrl = '/restricted';
-  window.history.pushState({url: current}, '', newUrl);
-  console.log('pushed', current);
   var main = $('main');
   main.innerHTML = tmpl(restrictedTmpl)({});
 
@@ -87,15 +88,16 @@ function renderRestricted(e) {
 }
 
 function renderHome(e) {
+  // only when clicked. not back button
   if (e) {
     e.preventDefault();
     e.stopPropagation();
+    var current = '/restricted';
+    var newUrl= '/';
+    window.history.pushState({url: current}, '', newUrl);
+    console.log('pushed', current);
   }
 
-  var current = '/restricted';
-  var newUrl= '/';
-  window.history.pushState({url: current}, '', newUrl);
-  console.log('pushed', current);
   var main = $('main');
   main.innerHTML = tmpl(homeTmpl)({});
 

@@ -9,6 +9,7 @@ Token-Based Authentication instead of Cookies
 ## Setup
 
     make keys
+    browserify -t brfs static/main.js > static/bundle.js
     go get
     go build
 

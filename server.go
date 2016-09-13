@@ -3,7 +3,6 @@ package main
 // using asymmetric crypto/RSA keys
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -11,6 +10,7 @@ import (
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/dgrijalva/jwt-go/request"
 )
 
 // location of the files used for signing and verification
@@ -51,6 +51,39 @@ const (
 	restrictedHtml = `<h1>Welcome!!</h1><img src="https://httpcats.herokuapp.com/200" alt="" />`
 )
 
+type YourCustomClaims struct {
+	jwt.StandardClaims
+	Username string
+}
+
+func CreateToken(username string) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, YourCustomClaims{
+		jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(time.Minute * 30).Unix(),
+			IssuedAt:  time.Now().Unix(),
+		},
+		username,
+	})
+
+	tokenString, err := token.SignedString([]byte("secret"))
+
+	return tokenString, err
+}
+
+// Validate token from http request. Returns empty string if token not valid.
+func ValidateTokenFromRequest(r *http.Request) (string, error) {
+	claims := &YourCustomClaims{}
+	_, err := request.ParseFromRequestWithClaims(r, request.AuthorizationHeaderExtractor, claims, func(token *jwt.Token) (interface{}, error) {
+		return []byte("secret"), nil
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	return claims.Username, nil
+}
+
 // reads the form values, checks them and creates the token
 func authHandler(w http.ResponseWriter, r *http.Request) {
 	// make sure its post
@@ -60,50 +93,11 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	type Form struct {
-		User string `json:"user"`
-		Pass string `json:"pass"`
-	}
+	tokenString, err := CreateToken("dan")
 
-	f := &Form{}
-
-	if err := json.NewDecoder(r.Body).Decode(f); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintln(w, "Sorry, error while decoding JSON")
-		log.Printf("JSON decoding error: %v\n", err)
-		return
-	}
-
-	log.Printf("f: %+v\n", f) // f: &{user: pass:}
-
-	log.Printf("Authenticate: user[%s] pass[%s]\n", f.User, f.Pass)
-
-	// check values
-	if f.User != "test" || f.Pass != "known" {
-		w.WriteHeader(http.StatusForbidden)
-		fmt.Fprintln(w, "Wrong info")
-		return
-	}
-
-	// create a signer for rsa 256
-	t := jwt.New(jwt.GetSigningMethod("RS256"))
-
-	// set our claims
-	t.Claims["AccessToken"] = "level1"
-	t.Claims["CustomUserInfo"] = struct {
-		Name string
-		Kind string
-	}{f.User, "human"}
-
-	// set the expire time
-	// see http://tools.ietf.org/html/draft-ietf-oauth-json-web-token-20#section-4.1.4
-	t.Claims["exp"] = time.Now().Add(time.Minute * 1).Unix()
-	tokenString, err := t.SignedString(signKey)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintln(w, "Sorry, error while Signing Token!")
-		log.Printf("Token Signing error: %v\n", err)
-		return
+		fmt.Fprintln(w, "error creating jwt token", err)
 	}
 
 	w.Header().Add("Content-Type", "application/json")
@@ -113,74 +107,18 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 
 // only accessible with a valid token
 func restrictedHandler(w http.ResponseWriter, r *http.Request) {
-	// check if we have a cookie with out tokenName
-	tokenCookie, err := r.Cookie(tokenName)
-	switch {
-	case err == http.ErrNoCookie:
-		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprintln(w, "No Token, no fun!")
-		return
-	case err != nil:
+
+	name, err := ValidateTokenFromRequest(r)
+
+	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintln(w, "Error while Parsing cookie!")
-		log.Printf("Cookie parse error: %v\n", err)
+		fmt.Fprintln(w, "error validating jwt token", err)
 		return
 	}
 
-	// just for the lulz, check if it is empty.. should fail on Parse anyway..
-	if tokenCookie.Value == "" {
-		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprintln(w, "No Token, no fun!")
-		return
-	}
-
-	// validate the token
-	token, err := jwt.Parse(tokenCookie.Value, func(token *jwt.Token) (interface{}, error) {
-		// since we only use the one private key to sign the tokens,
-		// we also only use its public counter part to verify
-		return verifyKey, nil
-	})
-
-	// branch out into the possible error from signing
-	switch err.(type) {
-
-	case nil: // no error
-
-		if !token.Valid { // but may still be invalid
-			w.WriteHeader(http.StatusUnauthorized)
-			fmt.Fprintln(w, "WHAT? Invalid Token? F*** off!")
-			return
-		}
-
-		// see stdout and watch for the CustomUserInfo, nicely unmarshalled
-		log.Printf("Someone accessed resricted area! Token:%+v\n", token)
-		w.Header().Set("Content-Type", "text/html")
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprintln(w, restrictedHtml)
-
-	case *jwt.ValidationError: // something was wrong during the validation
-		vErr := err.(*jwt.ValidationError)
-
-                switch vErr.Errors {
-		case jwt.ValidationErrorExpired:
-			w.WriteHeader(http.StatusUnauthorized)
-			fmt.Fprintln(w, "Token Expired, get a new one.")
-			return
-
-		default:
-			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintln(w, "Error while Parsing Token!")
-			log.Printf("ValidationError error: %+v\n", vErr.Errors)
-			return
-		}
-
-	default: // something else went wrong
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintln(w, "Error while Parsing Token!")
-		log.Printf("Token parse error: %v\n", err)
-		return
-	}
-
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintln(w, "success."+name)
+	return
 }
 
 // setup the handlers and start listening to requests

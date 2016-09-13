@@ -4,51 +4,12 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/dgrijalva/jwt-go/request"
-)
-
-// location of the files used for signing and verification
-const (
-	privKeyPath = "keys/app.rsa"     // openssl genrsa -out keys/app.rsa 1024
-	pubKeyPath  = "keys/app.rsa.pub" // openssl rsa -in keys/app.rsa -pubout > keys/app.rsa.pub
-)
-
-// keys are held in global variables
-// i havn't seen a memory corruption/info leakage in go yet
-// but maybe it's a better idea, just to store the public key in ram?
-// and load the signKey on every signing request? depends on  your usage i guess
-var (
-	verifyKey, signKey []byte
-)
-
-// read the key files before starting http handlers
-func init() {
-	var err error
-
-	signKey, err = ioutil.ReadFile(privKeyPath)
-	if err != nil {
-		log.Fatal("Error reading private key")
-		return
-	}
-
-	verifyKey, err = ioutil.ReadFile(pubKeyPath)
-	if err != nil {
-		log.Fatal("Error reading private key")
-		return
-	}
-}
-
-// just some html, to lazy for http.FileServer()
-const (
-	tokenName      = "AccessToken"
-	successHtml    = `<h2>Token Set - have fun!</h2><p>Go <a href="/">Back...</a></p>`
-	restrictedHtml = `<h1>Welcome!!</h1><img src="https://httpcats.herokuapp.com/200" alt="" />`
 )
 
 type YourCustomClaims struct {
@@ -125,7 +86,6 @@ func restrictedHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	http.HandleFunc("/authenticate", authHandler)
 	http.HandleFunc("/restricted", restrictedHandler)
-	http.Handle("/", http.FileServer(http.Dir("static")))
 
 	http.ListenAndServe(":3000", nil)
 
